@@ -1,45 +1,56 @@
 package gabrielleal.recrutamentointerno.repositories;
 
 import gabrielleal.recrutamentointerno.models.Usuario;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@ActiveProfiles("test") // Usa o perfil de teste
 public class UsuarioRepositoryTests {
+
+    @Autowired
+    private TestEntityManager entityManager;
 
     @Autowired
     private UsuarioRepository usuarioRepository;
 
-    @Test
-    public void testFindByEmail() {
-        Usuario usuario = new Usuario();
-        usuario.setNome("Test User"); // Adiciona o nome do usuário
+    private Usuario usuario;
+
+    @BeforeEach
+    public void setUp() {
+        usuario = new Usuario();
+        usuario.setNome("Test User");
         usuario.setEmail("test@example.com");
         usuario.setSenha("password");
-        usuarioRepository.save(usuario);
+        entityManager.persistAndFlush(usuario);
+    }
 
+    @Test
+    public void testFindByEmail() {
         Usuario found = usuarioRepository.findByEmail("test@example.com");
         assertNotNull(found);
         assertEquals("test@example.com", found.getEmail());
     }
 
     @Test
-    public void testExistsByEmail() {
-        Usuario usuario = new Usuario();
-        usuario.setNome("Test User");
-        usuario.setEmail("test@example.com");
-        usuario.setSenha("password");
-        usuarioRepository.save(usuario);
+    public void testFindByEmail_NotFound() {
+        Usuario found = usuarioRepository.findByEmail("notfound@example.com");
+        assertNull(found);
+    }
 
+    @Test
+    public void testExistsByEmail() {
         boolean exists = usuarioRepository.existsByEmail("test@example.com");
         assertTrue(exists);
+    }
 
-        boolean notExists = usuarioRepository.existsByEmail("nonexistent@example.com");
-        assertFalse(notExists);
+    @Test
+    public void testExistsByEmail_NotFound() {
+        boolean exists = usuarioRepository.existsByEmail("notfound@example.com");
+        assertFalse(exists);
     }
 }

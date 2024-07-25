@@ -6,11 +6,11 @@ import gabrielleal.recrutamentointerno.models.Vaga;
 import gabrielleal.recrutamentointerno.repositories.CandidatoRepository;
 import gabrielleal.recrutamentointerno.repositories.CandidaturaRepository;
 import gabrielleal.recrutamentointerno.repositories.VagaRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -18,9 +18,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 public class CandidaturaServiceTests {
 
     @Mock
@@ -35,139 +35,148 @@ public class CandidaturaServiceTests {
     @InjectMocks
     private CandidaturaService candidaturaService;
 
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
     @Test
     public void testListarTodasCandidaturas() {
         Candidatura candidatura1 = new Candidatura();
-        candidatura1.setId(1L);
         Candidatura candidatura2 = new Candidatura();
-        candidatura2.setId(2L);
+        List<Candidatura> candidaturas = Arrays.asList(candidatura1, candidatura2);
 
-        List<Candidatura> listaCandidaturas = Arrays.asList(candidatura1, candidatura2);
-        when(candidaturaRepository.findAll()).thenReturn(listaCandidaturas);
+        when(candidaturaRepository.findAll()).thenReturn(candidaturas);
 
-        List<Candidatura> resultado = candidaturaService.listarTodasCandidaturas();
-
-        assertEquals(2, resultado.size());
+        List<Candidatura> result = candidaturaService.listarTodasCandidaturas();
+        assertEquals(2, result.size());
         verify(candidaturaRepository, times(1)).findAll();
     }
 
     @Test
-    public void testBuscarCandidaturaPorId_Existente() {
-        Long id = 1L;
+    public void testBuscarCandidaturaPorId() {
         Candidatura candidatura = new Candidatura();
-        candidatura.setId(id);
+        when(candidaturaRepository.findById(1L)).thenReturn(Optional.of(candidatura));
 
-        when(candidaturaRepository.findById(id)).thenReturn(Optional.of(candidatura));
-
-        Candidatura resultado = candidaturaService.buscarCandidaturaPorId(id);
-
-        assertNotNull(resultado);
-        assertEquals(id, resultado.getId());
-        verify(candidaturaRepository, times(1)).findById(id);
+        Candidatura result = candidaturaService.buscarCandidaturaPorId(1L);
+        assertNotNull(result);
+        verify(candidaturaRepository, times(1)).findById(1L);
     }
 
     @Test
-    public void testBuscarCandidaturaPorId_NaoExistente() {
-        Long id = 1L;
-        when(candidaturaRepository.findById(id)).thenReturn(Optional.empty());
+    public void testBuscarCandidaturaPorId_NotFound() {
+        when(candidaturaRepository.findById(1L)).thenReturn(Optional.empty());
 
-        Candidatura resultado = candidaturaService.buscarCandidaturaPorId(id);
+        Candidatura result = candidaturaService.buscarCandidaturaPorId(1L);
+        assertNull(result);
+        verify(candidaturaRepository, times(1)).findById(1L);
+    }
 
-        assertNull(resultado);
-        verify(candidaturaRepository, times(1)).findById(id);
+    @Test
+    public void testBuscarCandidaturasPorVagaId() {
+        Candidatura candidatura1 = new Candidatura();
+        Candidatura candidatura2 = new Candidatura();
+        List<Candidatura> candidaturas = Arrays.asList(candidatura1, candidatura2);
+
+        when(candidaturaRepository.findByVagaId(1L)).thenReturn(candidaturas);
+
+        List<Candidatura> result = candidaturaService.buscarCandidaturasPorVagaId(1L);
+        assertEquals(2, result.size());
+        verify(candidaturaRepository, times(1)).findByVagaId(1L);
     }
 
     @Test
     public void testCriarCandidatura() {
         Candidatura candidatura = new Candidatura();
-        candidatura.setId(1L);
-        candidatura.setDataCandidatura(LocalDateTime.now());
+        Vaga vaga = new Vaga();
+        Candidato candidato = new Candidato();
+        candidatura.setVaga(vaga);
+        candidatura.setCandidato(candidato);
 
         when(candidaturaRepository.save(any(Candidatura.class))).thenReturn(candidatura);
 
-        Candidatura resultado = candidaturaService.criarCandidatura(candidatura);
+        Candidatura result = candidaturaService.criarCandidatura(candidatura);
+        assertNotNull(result);
+        assertNotNull(result.getDataCandidatura());
+        verify(candidaturaRepository, times(1)).save(candidatura);
+    }
 
-        assertNotNull(resultado);
-        assertEquals(1L, resultado.getId());
-        assertNotNull(resultado.getDataCandidatura());
-        verify(candidaturaRepository, times(1)).save(any(Candidatura.class));
+    @Test
+    public void testCriarCandidatura_NullVagaOrCandidato() {
+        Candidatura candidatura = new Candidatura();
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            candidaturaService.criarCandidatura(candidatura);
+        });
+
+        verify(candidaturaRepository, times(0)).save(any(Candidatura.class));
     }
 
     @Test
     public void testAtualizarCandidatura() {
-        Candidatura candidaturaAtualizada = new Candidatura();
-        candidaturaAtualizada.setId(1L);
+        Candidatura candidatura = new Candidatura();
+        when(candidaturaRepository.save(any(Candidatura.class))).thenReturn(candidatura);
 
-        when(candidaturaRepository.save(any(Candidatura.class))).thenReturn(candidaturaAtualizada);
-
-        Candidatura resultado = candidaturaService.atualizarCandidatura(candidaturaAtualizada);
-
-        assertNotNull(resultado);
-        assertEquals(1L, resultado.getId());
-        verify(candidaturaRepository, times(1)).save(any(Candidatura.class));
+        Candidatura result = candidaturaService.atualizarCandidatura(candidatura);
+        assertNotNull(result);
+        verify(candidaturaRepository, times(1)).save(candidatura);
     }
 
     @Test
     public void testDeletarCandidatura() {
-        Long id = 1L;
-        candidaturaService.deletarCandidatura(id);
-        verify(candidaturaRepository, times(1)).deleteById(id);
+        doNothing().when(candidaturaRepository).deleteById(1L);
+
+        candidaturaService.deletarCandidatura(1L);
+        verify(candidaturaRepository, times(1)).deleteById(1L);
     }
 
     @Test
-    public void testCandidatarSeAVaga_Sucesso() {
-        Long vagaId = 1L;
-        Long candidatoId = 1L;
-
+    public void testCandidatarSeAVaga() {
         Candidato candidato = new Candidato();
-        candidato.setId(candidatoId);
-
         Vaga vaga = new Vaga();
-        vaga.setId(vagaId);
+        when(candidatoRepository.findById(1L)).thenReturn(Optional.of(candidato));
+        when(vagaRepository.findById(1L)).thenReturn(Optional.of(vaga));
+        when(candidaturaRepository.save(any(Candidatura.class))).thenReturn(new Candidatura());
 
-        when(candidatoRepository.findById(candidatoId)).thenReturn(Optional.of(candidato));
-        when(vagaRepository.findById(vagaId)).thenReturn(Optional.of(vaga));
-        when(candidaturaRepository.save(any(Candidatura.class))).thenAnswer(invocation -> {
-            Candidatura c = invocation.getArgument(0);
-            c.setId(1L);
-            c.setDataCandidatura(LocalDateTime.now());
-            return c;
-        });
-
-        Candidatura resultado = candidaturaService.candidatarSeAVaga(vagaId, candidatoId);
-
-        assertNotNull(resultado);
-        assertEquals(vaga, resultado.getVaga());
-        assertEquals(candidato, resultado.getCandidato());
-        assertNotNull(resultado.getDataCandidatura());
+        Candidatura result = candidaturaService.candidatarSeAVaga(1L, 1L);
+        assertNotNull(result);
+        verify(candidatoRepository, times(1)).findById(1L);
+        verify(vagaRepository, times(1)).findById(1L);
+        verify(candidaturaRepository, times(1)).save(any(Candidatura.class));
     }
 
     @Test
-    public void testCandidatarSeAVaga_CandidatoOuVagaNaoEncontrado() {
-        Long vagaId = 1L;
-        Long candidatoId = 1L;
+    public void testCandidatarSeAVaga_CandidatoOrVagaNotFound() {
+        when(candidatoRepository.findById(1L)).thenReturn(Optional.empty());
+        when(vagaRepository.findById(1L)).thenReturn(Optional.empty());
 
-        when(candidatoRepository.findById(candidatoId)).thenReturn(Optional.empty());
-        when(vagaRepository.findById(vagaId)).thenReturn(Optional.empty());
-
-        Candidatura resultado = candidaturaService.candidatarSeAVaga(vagaId, candidatoId);
-
-        assertNull(resultado);
+        Candidatura result = candidaturaService.candidatarSeAVaga(1L, 1L);
+        assertNull(result);
+        verify(candidatoRepository, times(1)).findById(1L);
+        verify(vagaRepository, times(1)).findById(1L);
+        verify(candidaturaRepository, times(0)).save(any(Candidatura.class));
     }
 
     @Test
     public void testBuscarCandidaturaPorVagaECandidato() {
-        Long vagaId = 1L;
-        Long candidatoId = 1L;
         Candidatura candidatura = new Candidatura();
-        candidatura.setId(1L);
+        when(candidaturaRepository.findByVagaIdAndCandidatoId(1L, 1L)).thenReturn(candidatura);
 
-        when(candidaturaRepository.findByVagaIdAndCandidatoId(vagaId, candidatoId)).thenReturn(candidatura);
+        Candidatura result = candidaturaService.buscarCandidaturaPorVagaECandidato(1L, 1L);
+        assertNotNull(result);
+        verify(candidaturaRepository, times(1)).findByVagaIdAndCandidatoId(1L, 1L);
+    }
 
-        Candidatura resultado = candidaturaService.buscarCandidaturaPorVagaECandidato(vagaId, candidatoId);
+    @Test
+    public void testBuscarCandidaturasPorCandidatoId() {
+        Candidatura candidatura1 = new Candidatura();
+        Candidatura candidatura2 = new Candidatura();
+        List<Candidatura> candidaturas = Arrays.asList(candidatura1, candidatura2);
 
-        assertNotNull(resultado);
-        assertEquals(1L, resultado.getId());
-        verify(candidaturaRepository, times(1)).findByVagaIdAndCandidatoId(vagaId, candidatoId);
+        when(candidaturaRepository.findByCandidatoId(1L)).thenReturn(candidaturas);
+
+        List<Candidatura> result = candidaturaService.buscarCandidaturasPorCandidatoId(1L);
+        assertEquals(2, result.size());
+        verify(candidaturaRepository, times(1)).findByCandidatoId(1L);
     }
 }

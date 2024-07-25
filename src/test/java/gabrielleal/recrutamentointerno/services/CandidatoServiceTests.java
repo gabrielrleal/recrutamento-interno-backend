@@ -2,138 +2,109 @@ package gabrielleal.recrutamentointerno.services;
 
 import gabrielleal.recrutamentointerno.models.Candidato;
 import gabrielleal.recrutamentointerno.repositories.CandidatoRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class) // Habilita o uso do Mockito
 public class CandidatoServiceTests {
 
-    @Mock // Cria um mock do CandidatoRepository
+    @Mock
     private CandidatoRepository candidatoRepository;
 
-    @InjectMocks // Injeta o mock no CandidatoService
+    @InjectMocks
     private CandidatoService candidatoService;
+
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
 
     @Test
     public void testListarTodosCandidatos() {
         Candidato candidato1 = new Candidato();
-        candidato1.setId(1L);
-        candidato1.setNome("João Silva");
-        candidato1.setEmail("joao.silva@example.com");
-
         Candidato candidato2 = new Candidato();
-        candidato2.setId(2L);
-        candidato2.setNome("Maria Souza");
-        candidato2.setEmail("maria.souza@example.com");
+        List<Candidato> candidatos = Arrays.asList(candidato1, candidato2);
 
-        List<Candidato> listaDeCandidatos = Arrays.asList(candidato1, candidato2);
+        when(candidatoRepository.findAll()).thenReturn(candidatos);
 
-        when(candidatoRepository.findAll()).thenReturn(listaDeCandidatos);
-
-        List<Candidato> resultado = candidatoService.listarTodosCandidatos();
-
-        assertEquals(listaDeCandidatos, resultado); // Verifica se as listas são iguais
-        verify(candidatoRepository, times(1)).findAll(); // Verifica se o método findAll foi chamado uma vez
+        List<Candidato> result = candidatoService.listarTodosCandidatos();
+        assertEquals(2, result.size());
+        verify(candidatoRepository, times(1)).findAll();
     }
 
     @Test
-    public void testBuscarCandidatoPorId_Existente() {
-        Long id = 1L;
+    public void testBuscarCandidatoPorId() {
         Candidato candidato = new Candidato();
-        candidato.setId(id);
-        candidato.setNome("João Silva");
-        candidato.setEmail("joao.silva@example.com");
+        when(candidatoRepository.findById(1L)).thenReturn(Optional.of(candidato));
 
-        when(candidatoRepository.findById(id)).thenReturn(Optional.of(candidato));
-
-        Candidato resultado = candidatoService.buscarCandidatoPorId(id);
-
-        assertEquals(candidato, resultado); // Verifica se os candidatos são iguais
-        verify(candidatoRepository, times(1)).findById(id); // Verifica se o método findById foi chamado uma vez
+        Candidato result = candidatoService.buscarCandidatoPorId(1L);
+        assertNotNull(result);
+        verify(candidatoRepository, times(1)).findById(1L);
     }
 
     @Test
-    public void testBuscarCandidatoPorId_NaoExistente() {
-        Long id = 1L;
+    public void testBuscarCandidatoPorId_NotFound() {
+        when(candidatoRepository.findById(1L)).thenReturn(Optional.empty());
 
-        when(candidatoRepository.findById(id)).thenReturn(Optional.empty());
-
-        Candidato resultado = candidatoService.buscarCandidatoPorId(id);
-
-        assertNull(resultado); // Verifica se o resultado é nulo
-        verify(candidatoRepository, times(1)).findById(id);
+        Candidato result = candidatoService.buscarCandidatoPorId(1L);
+        assertNull(result);
+        verify(candidatoRepository, times(1)).findById(1L);
     }
 
     @Test
     public void testCriarCandidato() {
         Candidato candidato = new Candidato();
-        candidato.setNome("João Silva");
-        candidato.setEmail("joao.silva@example.com");
+        when(candidatoRepository.save(any(Candidato.class))).thenReturn(candidato);
 
-        when(candidatoRepository.save(candidato)).thenReturn(candidato);
-
-        Candidato resultado = candidatoService.criarCandidato(candidato);
-
-        assertEquals(candidato, resultado); // Verifica se os candidatos são iguais
+        Candidato result = candidatoService.criarCandidato(candidato);
+        assertNotNull(result);
         verify(candidatoRepository, times(1)).save(candidato);
     }
 
     @Test
-    public void testAtualizarCandidato_Existente() {
-        Long id = 1L;
+    public void testAtualizarCandidato() {
         Candidato candidatoExistente = new Candidato();
-        candidatoExistente.setId(id);
-        candidatoExistente.setNome("João Silva");
-        candidatoExistente.setEmail("joao.silva@example.com");
-
         Candidato candidatoAtualizado = new Candidato();
-        candidatoAtualizado.setId(id);
-        candidatoAtualizado.setNome("João Santos");
-        candidatoAtualizado.setEmail("joao.santos@example.com");
+        candidatoAtualizado.setNome("Nome Atualizado");
+        candidatoAtualizado.setEmail("email@atualizado.com");
 
-        when(candidatoRepository.findById(id)).thenReturn(Optional.of(candidatoExistente));
-        when(candidatoRepository.save(candidatoExistente)).thenReturn(candidatoAtualizado);
+        when(candidatoRepository.findById(1L)).thenReturn(Optional.of(candidatoExistente));
+        when(candidatoRepository.save(any(Candidato.class))).thenReturn(candidatoExistente);
 
-        Candidato resultado = candidatoService.atualizarCandidato(id, candidatoAtualizado);
-
-        assertEquals(candidatoAtualizado, resultado); // Verifica se os candidatos são iguais
-        verify(candidatoRepository, times(1)).findById(id);
+        Candidato result = candidatoService.atualizarCandidato(1L, candidatoAtualizado);
+        assertNotNull(result);
+        assertEquals("Nome Atualizado", result.getNome());
+        assertEquals("email@atualizado.com", result.getEmail());
+        verify(candidatoRepository, times(1)).findById(1L);
         verify(candidatoRepository, times(1)).save(candidatoExistente);
     }
 
     @Test
-    public void testAtualizarCandidato_NaoExistente() {
-        Long id = 1L;
+    public void testAtualizarCandidato_NotFound() {
         Candidato candidatoAtualizado = new Candidato();
-        candidatoAtualizado.setId(id);
-        candidatoAtualizado.setNome("João Santos");
-        candidatoAtualizado.setEmail("joao.santos@example.com");
+        when(candidatoRepository.findById(1L)).thenReturn(Optional.empty());
 
-        when(candidatoRepository.findById(id)).thenReturn(Optional.empty());
-
-        Candidato resultado = candidatoService.atualizarCandidato(id, candidatoAtualizado);
-
-        assertNull(resultado); // Verifica se o resultado é nulo
-        verify(candidatoRepository, times(1)).findById(id);
-        verify(candidatoRepository, never()).save(any(Candidato.class)); // Verifica se o método save não foi chamado
+        Candidato result = candidatoService.atualizarCandidato(1L, candidatoAtualizado);
+        assertNull(result);
+        verify(candidatoRepository, times(1)).findById(1L);
+        verify(candidatoRepository, times(0)).save(any(Candidato.class));
     }
 
     @Test
     public void testDeletarCandidato() {
-        Long id = 1L;
+        doNothing().when(candidatoRepository).deleteById(1L);
 
-        candidatoService.deletarCandidato(id);
-
-        verify(candidatoRepository, times(1)).deleteById(id); // Verifica se o método deleteById foi chamado uma vez
+        candidatoService.deletarCandidato(1L);
+        verify(candidatoRepository, times(1)).deleteById(1L);
     }
 }

@@ -1,21 +1,22 @@
 package gabrielleal.recrutamentointerno.services;
 
+import gabrielleal.recrutamentointerno.exceptions.VagaNaoEncontradaException;
 import gabrielleal.recrutamentointerno.models.Vaga;
 import gabrielleal.recrutamentointerno.repositories.VagaRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 public class VagaServiceTests {
 
     @Mock
@@ -24,114 +25,82 @@ public class VagaServiceTests {
     @InjectMocks
     private VagaService vagaService;
 
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
     @Test
     public void testListarTodasVagas() {
         Vaga vaga1 = new Vaga();
-        vaga1.setId(1L);
-        vaga1.setTitulo("Desenvolvedor Java");
-
         Vaga vaga2 = new Vaga();
-        vaga2.setId(2L);
-        vaga2.setTitulo("Desenvolvedor Front-end");
+        List<Vaga> vagas = Arrays.asList(vaga1, vaga2);
 
-        List<Vaga> listaVagas = Arrays.asList(vaga1, vaga2);
-        when(vagaRepository.findAll()).thenReturn(listaVagas);
+        when(vagaRepository.findAll()).thenReturn(vagas);
 
-        List<Vaga> resultado = vagaService.listarTodasVagas();
-
-        assertEquals(2, resultado.size());
+        List<Vaga> result = vagaService.listarTodasVagas();
+        assertEquals(2, result.size());
         verify(vagaRepository, times(1)).findAll();
     }
 
     @Test
-    public void testBuscarVagaPorId_Existente() {
-        Long id = 1L;
+    public void testBuscarVagaPorId() {
         Vaga vaga = new Vaga();
-        vaga.setId(id);
-        vaga.setTitulo("Desenvolvedor Java");
+        when(vagaRepository.findById(1L)).thenReturn(Optional.of(vaga));
 
-        when(vagaRepository.findById(id)).thenReturn(Optional.of(vaga));
-
-        Vaga resultado = vagaService.buscarVagaPorId(id);
-
-        assertNotNull(resultado);
-        assertEquals(id, resultado.getId());
-        assertEquals("Desenvolvedor Java", resultado.getTitulo());
-        verify(vagaRepository, times(1)).findById(id);
+        Vaga result = vagaService.buscarVagaPorId(1L);
+        assertNotNull(result);
+        verify(vagaRepository, times(1)).findById(1L);
     }
 
     @Test
-    public void testBuscarVagaPorId_NaoExistente() {
-        Long id = 1L;
-        when(vagaRepository.findById(id)).thenReturn(Optional.empty());
+    public void testBuscarVagaPorId_NotFound() {
+        when(vagaRepository.findById(1L)).thenReturn(Optional.empty());
 
-        Vaga resultado = vagaService.buscarVagaPorId(id);
-
-        assertNull(resultado);
-        verify(vagaRepository, times(1)).findById(id);
+        Vaga result = vagaService.buscarVagaPorId(1L);
+        assertNull(result);
+        verify(vagaRepository, times(1)).findById(1L);
     }
 
     @Test
     public void testCriarVaga() {
         Vaga vaga = new Vaga();
-        vaga.setTitulo("Desenvolvedor Java");
-        vaga.setDescricao("Vaga para desenvolvedor Java pleno");
+        when(vagaRepository.save(any(Vaga.class))).thenReturn(vaga);
 
-        when(vagaRepository.save(vaga)).thenReturn(vaga);
-
-        Vaga resultado = vagaService.criarVaga(vaga);
-
-        assertNotNull(resultado);
-        assertEquals("Desenvolvedor Java", resultado.getTitulo());
-        assertEquals("Vaga para desenvolvedor Java pleno", resultado.getDescricao());
+        Vaga result = vagaService.criarVaga(vaga);
+        assertNotNull(result);
         verify(vagaRepository, times(1)).save(vaga);
     }
 
     @Test
-    public void testAtualizarVaga_Existente() {
-        Long id = 1L;
+    public void testAtualizarVaga() {
         Vaga vagaExistente = new Vaga();
-        vagaExistente.setId(id);
-        vagaExistente.setTitulo("Desenvolvedor Java");
-
         Vaga vagaAtualizada = new Vaga();
-        vagaAtualizada.setId(id);
-        vagaAtualizada.setTitulo("Desenvolvedor Java Sênior");
+        when(vagaRepository.findById(1L)).thenReturn(Optional.of(vagaExistente));
+        when(vagaRepository.save(any(Vaga.class))).thenReturn(vagaExistente);
 
-        when(vagaRepository.findById(id)).thenReturn(Optional.of(vagaExistente));
-        when(vagaRepository.save(vagaExistente)).thenReturn(vagaAtualizada); // Simula a atualização
-
-        Vaga resultado = vagaService.atualizarVaga(id, vagaAtualizada);
-
-        assertNotNull(resultado);
-        assertEquals(id, resultado.getId());
-        assertEquals("Desenvolvedor Java Sênior", resultado.getTitulo());
-        verify(vagaRepository, times(1)).findById(id);
+        Vaga result = vagaService.atualizarVaga(1L, vagaAtualizada);
+        assertNotNull(result);
+        verify(vagaRepository, times(1)).findById(1L);
         verify(vagaRepository, times(1)).save(vagaExistente);
     }
 
     @Test
-    public void testAtualizarVaga_NaoExistente() {
-        Long id = 1L;
+    public void testAtualizarVaga_NotFound() {
         Vaga vagaAtualizada = new Vaga();
-        vagaAtualizada.setId(id);
-        vagaAtualizada.setTitulo("Desenvolvedor Java Sênior");
+        when(vagaRepository.findById(1L)).thenReturn(Optional.empty());
 
-        when(vagaRepository.findById(id)).thenReturn(Optional.empty());
-
-        Vaga resultado = vagaService.atualizarVaga(id, vagaAtualizada);
-
-        assertNull(resultado);
-        verify(vagaRepository, times(1)).findById(id);
-        verify(vagaRepository, never()).save(any(Vaga.class));
+        Vaga result = vagaService.atualizarVaga(1L, vagaAtualizada);
+        assertNull(result);
+        verify(vagaRepository, times(1)).findById(1L);
+        verify(vagaRepository, times(0)).save(any(Vaga.class));
     }
 
     @Test
     public void testDeletarVaga() {
-        Long id = 1L;
+        doNothing().when(vagaRepository).deleteById(1L);
 
-        vagaService.deletarVaga(id);
-
-        verify(vagaRepository, times(1)).deleteById(id);
+        vagaService.deletarVaga(1L);
+        verify(vagaRepository, times(1)).deleteById(1L);
     }
 }

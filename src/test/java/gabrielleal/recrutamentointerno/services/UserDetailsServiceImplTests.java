@@ -28,27 +28,25 @@ public class UserDetailsServiceImplTests {
 
     @Test
     public void testLoadUserByUsername_UserFound() {
-        String email = "test@example.com";
         Usuario usuario = new Usuario();
-        usuario.setEmail(email);
-        usuario.setSenha("password");
+        usuario.setEmail("test@example.com");
+        when(usuarioRepository.findByEmail("test@example.com")).thenReturn(usuario);
 
-        when(usuarioRepository.findByEmail(email)).thenReturn(usuario);
-
-        UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+        UserDetails userDetails = userDetailsService.loadUserByUsername("test@example.com");
 
         assertNotNull(userDetails);
-        assertEquals(email, userDetails.getUsername());
+        assertEquals("test@example.com", userDetails.getUsername());
+        verify(usuarioRepository, times(1)).findByEmail("test@example.com");
     }
 
     @Test
     public void testLoadUserByUsername_UserNotFound() {
-        String email = "notfound@example.com";
-
-        when(usuarioRepository.findByEmail(email)).thenReturn(null);
+        when(usuarioRepository.findByEmail("notfound@example.com")).thenReturn(null);
 
         assertThrows(UsernameNotFoundException.class, () -> {
-            userDetailsService.loadUserByUsername(email);
+            userDetailsService.loadUserByUsername("notfound@example.com");
         });
+
+        verify(usuarioRepository, times(1)).findByEmail("notfound@example.com");
     }
 }

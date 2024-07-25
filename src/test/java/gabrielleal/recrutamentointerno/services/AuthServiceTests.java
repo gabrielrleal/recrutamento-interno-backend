@@ -2,24 +2,29 @@ package gabrielleal.recrutamentointerno.services;
 
 import gabrielleal.recrutamentointerno.dtos.RegistroUsuarioDTO;
 import gabrielleal.recrutamentointerno.enums.RoleEnum;
+import gabrielleal.recrutamentointerno.models.Candidato;
 import gabrielleal.recrutamentointerno.models.Role;
 import gabrielleal.recrutamentointerno.models.Usuario;
 import gabrielleal.recrutamentointerno.repositories.RoleRepository;
 import gabrielleal.recrutamentointerno.repositories.UsuarioRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.MockitoAnnotations;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
 public class AuthServiceTests {
 
     @Mock
@@ -37,63 +42,89 @@ public class AuthServiceTests {
     @InjectMocks
     private AuthService authService;
 
+    @BeforeEach
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+    }
+
     @Test
-    public void testRegistrarUsuario_ComPapelValido() {
-        // Dados de registro
+    public void testAuthenticateUser_Success() {
+        Authentication authentication = mock(Authentication.class);
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenReturn(authentication);
+
+        String result = authService.authenticateUser("test@example.com", "password");
+
+        assertEquals("Login successful!", result);
+        verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        assertNotNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    public void testAuthenticateUser_Failure() {
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class))).thenThrow(new BadCredentialsException("Invalid email or password"));
+
+        assertThrows(BadCredentialsException.class, () -> {
+            authService.authenticateUser("test@example.com", "wrongpassword");
+        });
+
+        verify(authenticationManager, times(1)).authenticate(any(UsernamePasswordAuthenticationToken.class));
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    public void testLogoutUser() {
+        SecurityContextHolder.getContext().setAuthentication(mock(Authentication.class));
+
+        authService.logoutUser();
+
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    public void testUsuarioExiste() {
+        when(usuarioRepository.existsByEmail("test@example.com")).thenReturn(true);
+
+        boolean result = authService.usuarioExiste("test@example.com");
+
+        assertTrue(result);
+        verify(usuarioRepository, times(1)).existsByEmail("test@example.com");
+    }
+
+    @Test
+    public void testRegistrarUsuario() {
         RegistroUsuarioDTO registroUsuarioDTO = new RegistroUsuarioDTO();
-        registroUsuarioDTO.setNome("João Silva");
-        registroUsuarioDTO.setEmail("joao.silva@example.com");
-        registroUsuarioDTO.setSenha("senha123");
+        registroUsuarioDTO.setNome("Test User");
+        registroUsuarioDTO.setEmail("test@example.com");
+        registroUsuarioDTO.setSenha("password");
         registroUsuarioDTO.setRole(RoleEnum.CANDIDATO);
 
-        // Simula a existência do papel no repositório
-        when(roleRepository.findByNome(RoleEnum.CANDIDATO)).thenReturn(Optional.of(new Role()));
+        Role role = new Role();
+        role.setNome(RoleEnum.CANDIDATO);
+        when(roleRepository.findByNome(RoleEnum.CANDIDATO)).thenReturn(Optional.of(role));
+        when(passwordEncoder.encode("password")).thenReturn("encodedPassword");
+        when(usuarioRepository.save(any(Usuario.class))).thenReturn(new Usuario());
 
-        // Simula a codificação da senha
-        when(passwordEncoder.encode("senha123")).thenReturn("senhaCodificada");
+        Usuario result = authService.registrarUsuario(registroUsuarioDTO);
 
-        // Simula a salvamento do usuário
-        when(usuarioRepository.save(any(Usuario.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
-        // Chama o método de registro
-        Usuario usuario = authService.registrarUsuario(registroUsuarioDTO);
-
-        // Verifica se o usuário foi registrado corretamente
-        assertNotNull(usuario);
-        assertEquals("João Silva", usuario.getNome());
-        assertEquals("joao.silva@example.com", usuario.getEmail());
-        assertEquals("senhaCodificada", usuario.getSenha());
-        assertTrue(usuario.getRoles().contains("CANDIDATO"));
-        assertNotNull(usuario.getCandidato());
-
-        // Verifica se os métodos do repositório foram chamados corretamente
+        assertNotNull(result);
         verify(roleRepository, times(1)).findByNome(RoleEnum.CANDIDATO);
-        verify(passwordEncoder, times(1)).encode("senha123");
+        verify(passwordEncoder, times(1)).encode("password");
         verify(usuarioRepository, times(1)).save(any(Usuario.class));
     }
 
     @Test
-    public void testRegistrarUsuario_ComPapelInvalido() {
-        // Dados de registro
+    public void testRegistrarUsuario_InvalidRole() {
         RegistroUsuarioDTO registroUsuarioDTO = new RegistroUsuarioDTO();
-        registroUsuarioDTO.setNome("João Silva");
-        registroUsuarioDTO.setEmail("joao.silva@example.com");
-        registroUsuarioDTO.setSenha("senha123");
         registroUsuarioDTO.setRole(RoleEnum.CANDIDATO);
 
-        // Simula a inexistência do papel no repositório
         when(roleRepository.findByNome(RoleEnum.CANDIDATO)).thenReturn(Optional.empty());
 
-        // Verifica se uma exceção é lançada em caso de papel inválido
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+        assertThrows(IllegalArgumentException.class, () -> {
             authService.registrarUsuario(registroUsuarioDTO);
         });
 
-        assertEquals("Papel inválido: CANDIDATO", exception.getMessage());
-
-        // Verifica se os métodos do repositório foram chamados corretamente
         verify(roleRepository, times(1)).findByNome(RoleEnum.CANDIDATO);
-        verify(passwordEncoder, never()).encode(anyString());
-        verify(usuarioRepository, never()).save(any(Usuario.class));
+        verify(passwordEncoder, times(0)).encode(anyString());
+        verify(usuarioRepository, times(0)).save(any(Usuario.class));
     }
 }

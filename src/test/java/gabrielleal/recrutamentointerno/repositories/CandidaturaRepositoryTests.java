@@ -1,79 +1,68 @@
 package gabrielleal.recrutamentointerno.repositories;
 
-import gabrielleal.recrutamentointerno.models.Candidatura;
 import gabrielleal.recrutamentointerno.models.Candidato;
+import gabrielleal.recrutamentointerno.models.Candidatura;
 import gabrielleal.recrutamentointerno.models.Vaga;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@ActiveProfiles("test") // Usa o perfil de teste
 public class CandidaturaRepositoryTests {
+
+    @Autowired
+    private TestEntityManager entityManager;
 
     @Autowired
     private CandidaturaRepository candidaturaRepository;
 
-    @Autowired
-    private CandidatoRepository candidatoRepository;
-
-    @Autowired
-    private VagaRepository vagaRepository;
-
-    private Candidato candidato;
     private Vaga vaga;
+    private Candidato candidato;
 
     @BeforeEach
     public void setUp() {
+        vaga = new Vaga();
+        vaga.setStatus(true);
+        entityManager.persistAndFlush(vaga);
+
         candidato = new Candidato();
         candidato.setNome("Test Candidato");
         candidato.setEmail("candidato@example.com");
-        candidato = candidatoRepository.save(candidato);
+        entityManager.persistAndFlush(candidato);
 
-        vaga = new Vaga();
-        vaga.setTitulo("Test Vaga");
-        vaga.setDescricao("Descrição da Vaga");
-        vaga = vagaRepository.save(vaga);
+        Candidatura candidatura = new Candidatura();
+        candidatura.setVaga(vaga);
+        candidatura.setCandidato(candidato);
+        entityManager.persistAndFlush(candidatura);
     }
 
     @Test
     public void testFindByVagaIdAndCandidatoId() {
-        Candidatura candidatura = new Candidatura();
-        candidatura.setCandidato(candidato);
-        candidatura.setVaga(vaga);
-        candidaturaRepository.save(candidatura);
-
-        Candidatura found = candidaturaRepository.findByVagaIdAndCandidatoId(vaga.getId(), candidato.getId());
-        assertNotNull(found);
-        assertEquals(vaga.getId(), found.getVaga().getId());
-        assertEquals(candidato.getId(), found.getCandidato().getId());
+        Candidatura candidatura = candidaturaRepository.findByVagaIdAndCandidatoId(vaga.getId(), candidato.getId());
+        assertNotNull(candidatura);
+        assertEquals(vaga.getId(), candidatura.getVaga().getId());
+        assertEquals(candidato.getId(), candidatura.getCandidato().getId());
     }
 
     @Test
     public void testFindByVagaId() {
-        Candidatura candidatura1 = new Candidatura();
-        candidatura1.setCandidato(candidato);
-        candidatura1.setVaga(vaga);
-        candidaturaRepository.save(candidatura1);
-
-        Candidato outroCandidato = new Candidato();
-        outroCandidato.setNome("Outro Candidato");
-        outroCandidato.setEmail("outro@example.com");
-        outroCandidato = candidatoRepository.save(outroCandidato);
-
-        Candidatura candidatura2 = new Candidatura();
-        candidatura2.setCandidato(outroCandidato);
-        candidatura2.setVaga(vaga);
-        candidaturaRepository.save(candidatura2);
-
         List<Candidatura> candidaturas = candidaturaRepository.findByVagaId(vaga.getId());
         assertNotNull(candidaturas);
-        assertEquals(2, candidaturas.size());
+        assertEquals(1, candidaturas.size());
+        assertEquals(vaga.getId(), candidaturas.get(0).getVaga().getId());
+    }
+
+    @Test
+    public void testFindByCandidatoId() {
+        List<Candidatura> candidaturas = candidaturaRepository.findByCandidatoId(candidato.getId());
+        assertNotNull(candidaturas);
+        assertEquals(1, candidaturas.size());
+        assertEquals(candidato.getId(), candidaturas.get(0).getCandidato().getId());
     }
 }

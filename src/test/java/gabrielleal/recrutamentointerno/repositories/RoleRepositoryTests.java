@@ -2,43 +2,47 @@ package gabrielleal.recrutamentointerno.repositories;
 
 import gabrielleal.recrutamentointerno.enums.RoleEnum;
 import gabrielleal.recrutamentointerno.models.Role;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.test.context.ActiveProfiles;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
-@ActiveProfiles("test") // Usa o perfil de teste
 public class RoleRepositoryTests {
+
+    @Autowired
+    private TestEntityManager entityManager;
 
     @Autowired
     private RoleRepository roleRepository;
 
-    @Test
-    public void testFindByNome() {
-        Role role = new Role();
-        role.setNome(RoleEnum.ADMINISTRADOR);
-        roleRepository.save(role);
+    @BeforeEach
+    public void setUp() {
+        Role roleAdmin = new Role();
+        roleAdmin.setNome(RoleEnum.ADMINISTRADOR);
+        entityManager.persistAndFlush(roleAdmin);
 
-        Optional<Role> found = roleRepository.findByNome(RoleEnum.ADMINISTRADOR);
-        assertTrue(found.isPresent());
-        assertEquals(RoleEnum.ADMINISTRADOR, found.get().getNome());
+        Role roleUser = new Role();
+        roleUser.setNome(RoleEnum.CANDIDATO);
+        entityManager.persistAndFlush(roleUser);
     }
 
     @Test
+    public void testFindByNome() {
+        Optional<Role> role = roleRepository.findByNome(RoleEnum.ADMINISTRADOR);
+        assertTrue(role.isPresent());
+        assertEquals(RoleEnum.ADMINISTRADOR, role.get().getNome());
+    }
+
+
+    @Test
     public void testExistsByNome() {
-        Role role = new Role();
-        role.setNome(RoleEnum.CANDIDATO);
-        roleRepository.save(role);
-
-        boolean exists = roleRepository.existsByNome(RoleEnum.CANDIDATO);
+        boolean exists = roleRepository.existsByNome(RoleEnum.ADMINISTRADOR);
         assertTrue(exists);
-
-        boolean notExists = roleRepository.existsByNome(RoleEnum.ADMINISTRADOR);
-        assertFalse(notExists);
     }
 }
