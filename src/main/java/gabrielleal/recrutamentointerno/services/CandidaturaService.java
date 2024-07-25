@@ -67,4 +67,8 @@ public class CandidaturaService {
     public Candidatura buscarCandidaturaPorVagaECandidato(Long vagaId, Long candidatoId) {
         return candidaturaRepository.findByVagaIdAndCandidatoId(vagaId, candidatoId);
     }
+
+    public List<Candidatura> buscarCandidaturasPorCandidatoId(Long candidatoId) {
+        return candidaturaRepository.findByCandidatoId(candidatoId);
+    }
 }

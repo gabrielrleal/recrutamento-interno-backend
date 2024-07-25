@@ -44,6 +44,26 @@ public class VagaController {
             return ResponseEntity.ok(vagaDTO);
         }
     }
+    @Operation(summary = "Listar todas as vagas ativas", description = "Retorna uma lista de todas as vagas ativas")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de vagas ativas retornada com sucesso")
+    })
+    @GetMapping("/ativas")
+    public ResponseEntity<List<VagaDTO>> listarVagasAtivas() {
+        List<VagaDTO> vagas = vagaFacade.listarVagasAtivas();
+        return ResponseEntity.ok(vagas);
+    }
+
+    @Operation(summary = "Listar todas as vagas inativas", description = "Retorna uma lista de todas as vagas inativas")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de vagas inativas retornada com sucesso")
+    })
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @GetMapping("/inativas")
+    public ResponseEntity<List<VagaDTO>> listarVagasInativas() {
+        List<VagaDTO> vagas = vagaFacade.listarVagasInativas();
+        return ResponseEntity.ok(vagas);
+    }
 
     @Operation(summary = "Criar uma nova vaga", description = "Cria uma nova vaga")
     @ApiResponses(value = {
@@ -62,6 +82,7 @@ public class VagaController {
             @ApiResponse(responseCode = "404", description = "Vaga não encontrada")
     })
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<VagaDTO> atualizarVaga(@PathVariable("id") Long id, @RequestBody VagaDTO vagaDTO) {
         VagaDTO vagaAtualizada = vagaFacade.atualizarVaga(id, vagaDTO);
         if (vagaAtualizada != null) {
@@ -70,15 +91,29 @@ public class VagaController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
     @Operation(summary = "Deletar uma vaga", description = "Deleta uma vaga pelo ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Vaga deletada com sucesso"),
             @ApiResponse(responseCode = "404", description = "Vaga não encontrada")
     })
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
     public ResponseEntity<Void> deletarVaga(@PathVariable("id") Long id) {
         vagaFacade.deletarVaga(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PutMapping("/desativar/{id}")
+    public ResponseEntity<Void> desativarVaga(@PathVariable("id") Long id) {
+        vagaFacade.desativarVaga(id);
+        return ResponseEntity.noContent().build();
+    }
+    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PutMapping("/ativar/{id}")
+    public ResponseEntity<Void> ativarVaga(@PathVariable("id") Long id) {
+        vagaFacade.ativarVaga(id);
         return ResponseEntity.noContent().build();
     }
 }

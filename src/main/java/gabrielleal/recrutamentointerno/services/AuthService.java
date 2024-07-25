@@ -18,6 +18,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class AuthService {
@@ -25,7 +27,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final UsuarioRepository usuarioRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RoleRepository roleRepository; // Adicione a injeção do RoleRepository
+    private final RoleRepository roleRepository;
 
     @Autowired
     public AuthService(AuthenticationManager authenticationManager,
@@ -38,23 +40,16 @@ public class AuthService {
         this.roleRepository = roleRepository;
     }
 
-
-    @Autowired
-    private JwtUtil jwtUtil;
-
     public String authenticateUser(String email, String senha) {
-        Usuario usuario = usuarioRepository.findByEmail(email);
-        if (usuario == null || !passwordEncoder.matches(senha, usuario.getSenha())) {
+        try {
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(email, senha));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            return "Login successful!";
+        } catch (BadCredentialsException e) {
             throw new BadCredentialsException("Invalid email or password");
         }
-        return jwtUtil.generateToken(email);
-
-    /*public void authenticateUser(String email, String senha) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(email, senha));
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-    }*/
-
+    }
 
     public void logoutUser() {
         SecurityContextHolder.clearContext();
@@ -64,25 +59,16 @@ public class AuthService {
         return usuarioRepository.existsByEmail(email);
     }
 
-    public String login(LoginDTO loginDto) {
-        try {
-            authenticateUser(loginDto.getEmail(), loginDto.getSenha());
-            return "Login successful!";
-        } catch (BadCredentialsException e) {
-            throw new BadCredentialsException("Invalid email or password");
-        }
-    }
-
     public Usuario registrarUsuario(RegistroUsuarioDTO registroUsuarioDTO) {
-
         RoleEnum roleEnum = registroUsuarioDTO.getRole();
         Role role = roleRepository.findByNome(roleEnum)
                 .orElseThrow(() -> new IllegalArgumentException("Papel inválido: " + roleEnum));
+
         Usuario usuario = new Usuario();
         usuario.setNome(registroUsuarioDTO.getNome());
         usuario.setEmail(registroUsuarioDTO.getEmail());
         usuario.setSenha(passwordEncoder.encode(registroUsuarioDTO.getSenha()));
-        usuario.setRoles(Collections.singleton(registroUsuarioDTO.getRole().name()));
+        usuario.setRoles(Collections.singleton(roleEnum.name()));
 
         if (roleEnum == RoleEnum.CANDIDATO) {
             Candidato candidato = new Candidato();

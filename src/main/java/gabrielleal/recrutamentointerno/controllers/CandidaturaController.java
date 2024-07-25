@@ -98,4 +98,19 @@ public class CandidaturaController {
         candidaturaFacade.deletarCandidatura(id);
         return ResponseEntity.noContent().build();
     }
+
+    @Operation(summary = "Listar candidaturas por ID do candidato", description = "Retorna uma lista de candidaturas pelo ID do candidato")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Candidaturas encontradas"),
+            @ApiResponse(responseCode = "204", description = "Nenhuma candidatura encontrada para o ID do candidato fornecido")
+    })
+    @GetMapping("/candidato/{candidatoId}")
+    public ResponseEntity<List<CandidaturaDTO>> listarCandidaturasPorCandidato(@PathVariable("candidatoId") Long candidatoId) {
+        List<CandidaturaDTO> candidaturas = candidaturaFacade.listarCandidaturasPorCandidato(candidatoId);
+        if (candidaturas.isEmpty()) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.ok(candidaturas);
+        }
+    }
 }

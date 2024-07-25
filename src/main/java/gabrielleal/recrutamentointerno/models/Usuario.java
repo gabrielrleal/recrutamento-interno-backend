@@ -88,10 +88,9 @@ public class Usuario implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles.stream()
-                .map(SimpleGrantedAuthority::new) // Converte a String para SimpleGrantedAuthority
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role)) // Converte a String para SimpleGrantedAuthority com prefixo "ROLE_"
                 .collect(Collectors.toList());
     }
-
 
     @Override
     public String getPassword() {

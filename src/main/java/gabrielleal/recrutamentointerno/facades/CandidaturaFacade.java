@@ -29,6 +29,11 @@ public class CandidaturaFacade {
         return candidaturas.stream().map(this::converterParaDTO).collect(Collectors.toList());
     }
 
+    public List<CandidaturaDTO> listarCandidaturasPorCandidato(Long candidatoId) {
+        List<Candidatura> candidaturas = candidaturaService.buscarCandidaturasPorCandidatoId(candidatoId);
+        return candidaturas.stream().map(this::converterParaDTO).collect(Collectors.toList());
+    }
+
 
     public CandidaturaDTO criarCandidatura(CandidaturaDTO candidaturaDTO) {
         Candidatura candidatura = candidaturaService.candidatarSeAVaga(candidaturaDTO.getVagaId(), candidaturaDTO.getCandidatoId());

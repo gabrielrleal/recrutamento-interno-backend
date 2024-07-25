@@ -1,6 +1,7 @@
 package gabrielleal.recrutamentointerno.services;
 
 
+import gabrielleal.recrutamentointerno.exceptions.VagaNaoEncontradaException;
 import gabrielleal.recrutamentointerno.models.Vaga;
 import gabrielleal.recrutamentointerno.repositories.VagaRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +17,26 @@ public class VagaService {
 
     public List<Vaga> listarTodasVagas() {
         return vagaRepository.findAll();
+    }
+
+    public List<Vaga> listarVagasAtivas() {
+        return vagaRepository.findByStatusTrue();
+    }
+
+    public List<Vaga> listarVagasInativas() {
+        return vagaRepository.findByStatusFalse();
+    }
+
+    public void desativarVaga(Long id) {
+        Vaga vaga = vagaRepository.findById(id).orElseThrow(() -> new VagaNaoEncontradaException("Vaga não encontrada com o ID: " + id));
+        vaga.setStatus(false);
+        vagaRepository.save(vaga);
+    }
+
+    public void ativarVaga(Long id) {
+        Vaga vaga = vagaRepository.findById(id).orElseThrow(() -> new VagaNaoEncontradaException("Vaga não encontrada com o ID: " + id));
+        vaga.setStatus(true);
+        vagaRepository.save(vaga);
     }
 
     public Vaga buscarVagaPorId(Long id) {

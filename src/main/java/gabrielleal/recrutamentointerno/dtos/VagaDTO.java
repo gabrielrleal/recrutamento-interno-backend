@@ -10,6 +10,7 @@ public class VagaDTO {
     private String titulo;
     @NotBlank(message = "A descrição da vaga é obrigatória")
     private String descricao;
+    private boolean status;
 
     public Long getId() {
         return id;
@@ -33,5 +34,13 @@ public class VagaDTO {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
+    }
+
+    public boolean isStatus() {
+        return status;
+    }
+
+    public void setStatus(boolean status) {
+        this.status = status;
     }
 }

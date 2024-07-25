@@ -14,10 +14,26 @@ public class VagaFacade {
 
     @Autowired
     private VagaService vagaService;
-
+    
     public List<VagaDTO> listarTodasVagas() {
         List<Vaga> vagas = vagaService.listarTodasVagas();
         return vagas.stream().map(this::converterParaDTO).collect(Collectors.toList());
+    }
+
+    public List<VagaDTO> listarVagasAtivas() {
+        return vagaService.listarVagasAtivas().stream().map(this::converterParaDTO).collect(Collectors.toList());
+    }
+
+    public List<VagaDTO> listarVagasInativas() {
+        return vagaService.listarVagasInativas().stream().map(this::converterParaDTO).collect(Collectors.toList());
+    }
+
+    public void desativarVaga(Long id) {
+        vagaService.desativarVaga(id);
+    }
+
+    public void ativarVaga(Long id) {
+        vagaService.ativarVaga(id);
     }
 
     public VagaDTO buscarVagaPorId(Long id) {
@@ -49,6 +65,7 @@ public class VagaFacade {
         vagaDTO.setId(vaga.getId());
         vagaDTO.setTitulo(vaga.getTitulo());
         vagaDTO.setDescricao(vaga.getDescricao());
+        vagaDTO.setStatus(vaga.getStatus());
         return vagaDTO;
     }
 
