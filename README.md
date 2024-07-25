@@ -41,7 +41,7 @@ A documentação da API, gerada automaticamente pelo Springdoc OpenAPI, estará 
 
 http://localhost:8080/swagger-ui/index.html
 
-Referência ao Frontend
+## Referência ao Frontend
 Para configurar e rodar o frontend do projeto, siga as instruções na documentação do frontend. https://github.com/gabrielrleal/recrutamento-interno-frontend
 
 ## Observações 📝
