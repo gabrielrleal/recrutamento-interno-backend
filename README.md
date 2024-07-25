@@ -7,7 +7,6 @@ Antes de começar, você vai precisar ter instalado em sua máquina as seguintes
 - **Java 17**: A versão do Java utilizada no projeto. Verifique se você tem a versão correta instalada. ☕
 - **Maven**: O gerenciador de dependências do projeto. 🧑‍🔧
 - **Git**: O sistema de controle de versão para clonar o repositório. 📚
-- **Docker (opcional)**: Para facilitar a configuração do ambiente, você pode usar o Docker para subir um banco de dados PostgreSQL. 🐳
 - **PostgreSQL**: O banco de dados utilizado para armazenar os dados da aplicação. 🐘
 
 ## Passos para rodar a aplicação 👣
