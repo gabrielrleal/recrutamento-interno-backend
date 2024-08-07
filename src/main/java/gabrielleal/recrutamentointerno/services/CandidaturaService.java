@@ -39,6 +39,10 @@ public class CandidaturaService {
         if (candidatura.getVaga() == null || candidatura.getCandidato() == null) {
             throw new IllegalArgumentException("Vaga e Candidato não podem ser nulos");
         }
+        
+        if (candidaturaRepository.existsByCandidatoIdAndVagaId(candidatura.getCandidato().getId(), candidatura.getVaga().getId())) {
+            throw new IllegalStateException("O candidato já se candidatou para esta vaga");
+        }
         candidatura.setDataCandidatura(LocalDateTime.now());
         return candidaturaRepository.save(candidatura);
     }
@@ -52,8 +56,14 @@ public class CandidaturaService {
     }
 
     public Candidatura candidatarSeAVaga(Long vagaId, Long candidatoId) {
-        Candidato candidato = candidatoRepository.findById(candidatoId).orElse(null);
-        Vaga vaga = vagaRepository.findById(vagaId).orElse(null);
+        Candidato candidato = candidatoRepository.findById(candidatoId)
+        .orElseThrow(() -> new IllegalArgumentException("Candidato não encontrado"));
+        Vaga vaga = vagaRepository.findById(vagaId)
+        .orElseThrow(() -> new IllegalArgumentException("Vaga não encontrada"));
+        
+        if (candidaturaRepository.existsByCandidatoIdAndVagaId(candidatoId, vagaId)) {
+            throw new IllegalStateException("O candidato já se candidatou para esta vaga");
+        }
 
         if (candidato != null && vaga != null) {
             Candidatura candidatura = new Candidatura();

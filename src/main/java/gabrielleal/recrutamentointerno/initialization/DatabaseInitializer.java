@@ -5,13 +5,13 @@ import gabrielleal.recrutamentointerno.models.Role;
 import gabrielleal.recrutamentointerno.repositories.RoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-
 @Component
+@DependsOnDatabaseInitialization
 public class DatabaseInitializer implements CommandLineRunner {
-
     @Autowired
     private RoleRepository roleRepository;
 

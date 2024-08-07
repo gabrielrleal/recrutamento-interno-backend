@@ -14,7 +14,6 @@ public class Role {
     @Column(length = 20)
     private RoleEnum nome;
 
-
     public RoleEnum getNome() {
         return nome;
     }

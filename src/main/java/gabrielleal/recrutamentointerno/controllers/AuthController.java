@@ -75,12 +75,17 @@ public class AuthController {
             @ApiResponse(responseCode = "400", description = "Email já cadastrado")
     })
     @PostMapping("/register")
-    public ResponseEntity<String> registrarUsuario(@Valid @RequestBody RegistroUsuarioDTO registroUsuarioDTO) {
+    public ResponseEntity<Map<String, Object>> registrarUsuario(@Valid @RequestBody RegistroUsuarioDTO registroUsuarioDTO) {
         if (authService.usuarioExiste(registroUsuarioDTO.getEmail())) {
-            return ResponseEntity.badRequest().body("Email já cadastrado");
+            Map<String, Object> response = new HashMap<>();
+            response.put("mensagem", "Email já cadastrado");
+            return ResponseEntity.badRequest().body(response);
         }
 
         Usuario usuario = authService.registrarUsuario(registroUsuarioDTO);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Usuário criado com sucesso! ID: " + usuario.getId());
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensagem", "Usuário criado com sucesso!");
+        response.put("id", usuario.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

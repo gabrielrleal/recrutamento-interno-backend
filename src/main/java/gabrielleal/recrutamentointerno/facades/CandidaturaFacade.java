@@ -37,6 +37,9 @@ public class CandidaturaFacade {
 
     public CandidaturaDTO criarCandidatura(CandidaturaDTO candidaturaDTO) {
         Candidatura candidatura = candidaturaService.candidatarSeAVaga(candidaturaDTO.getVagaId(), candidaturaDTO.getCandidatoId());
+        if (candidatura == null) {
+            return null;
+        }
         return converterParaDTO(candidatura);
     }
     public CandidaturaDTO criarCandidatura2(CandidaturaDTO candidaturaDTO) {

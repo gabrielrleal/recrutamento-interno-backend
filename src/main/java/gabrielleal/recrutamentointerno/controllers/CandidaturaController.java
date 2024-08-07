@@ -3,17 +3,21 @@ package gabrielleal.recrutamentointerno.controllers;
 import gabrielleal.recrutamentointerno.dtos.CandidaturaDTO;
 import gabrielleal.recrutamentointerno.exceptions.CandidaturaNaoEncontradaException;
 import gabrielleal.recrutamentointerno.facades.CandidaturaFacade;
+import gabrielleal.recrutamentointerno.models.Candidatura;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/candidaturas")
@@ -64,13 +68,24 @@ public class CandidaturaController {
 
     @Operation(summary = "Criar uma nova candidatura", description = "Cria uma nova candidatura")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Candidatura criada com sucesso")
+            @ApiResponse(responseCode = "201", description = "Candidatura criada com sucesso"),
+            @ApiResponse(responseCode = "409", description = "O candidato já se candidatou para esta vaga")
     })
     @PostMapping
-    public ResponseEntity<CandidaturaDTO> criarCandidatura(@Valid @RequestBody CandidaturaDTO candidaturaDTO, UriComponentsBuilder uriBuilder) {
-        CandidaturaDTO novaCandidatura = candidaturaFacade.criarCandidatura(candidaturaDTO);
-        URI uri = uriBuilder.path("/candidaturas/{id}").buildAndExpand(novaCandidatura.getId()).toUri();
-        return ResponseEntity.created(uri).body(novaCandidatura);
+    public ResponseEntity<Map<String, Object>> criarCandidatura(@Valid @RequestBody CandidaturaDTO candidaturaDTO) {
+        CandidaturaDTO novaCandidaturaDTO = candidaturaFacade.criarCandidatura(candidaturaDTO);
+        
+        if (novaCandidaturaDTO == null) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("mensagem", "O candidato já se candidatou para esta vaga");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+        }
+
+        URI uri = UriComponentsBuilder.fromPath("/candidaturas/{id}").buildAndExpand(novaCandidaturaDTO.getId()).toUri();
+        Map<String, Object> response = new HashMap<>();
+        response.put("mensagem", "Candidatura criada com sucesso!");
+        response.put("id", novaCandidaturaDTO.getId());
+        return ResponseEntity.created(uri).body(response);
     }
 
     @Operation(summary = "Atualizar uma candidatura", description = "Atualiza os dados de uma candidatura existente")
